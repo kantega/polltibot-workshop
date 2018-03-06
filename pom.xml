@@ -11,6 +11,7 @@
         <nd4j.version>0.9.1</nd4j.version>
         <bucket>pollti-bot-workshop</bucket> <!-- bucket w/o gs:// -->
     </properties>
+
     <repositories>
         <repository>
             <id>nexus</id>
@@ -30,7 +31,6 @@
         </repository>
     </repositories>
 
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -45,6 +45,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>no.kantega.niagara</groupId>
@@ -74,7 +75,7 @@
         <dependency>
             <groupId>org.kantega.kson</groupId>
             <artifactId>kson</artifactId>
-            <version>2.11-SNAPSHOT</version>
+            <version>2.12-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -103,14 +104,21 @@
             <artifactId>google-cloud-storage</artifactId>
             <version>1.19.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.scribejava</groupId>
+            <artifactId>scribejava-apis</artifactId>
+            <version>5.2.0-java7again</version>
+        </dependency>
+
     </dependencies>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
+                <version>3.7.0</version>
                 <configuration>
+                    <fork>true</fork>
                     <source>8</source>
                     <target>8</target>
                 </configuration>
@@ -120,7 +128,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>no.kantega.robomadness.mains.TrainInCloud</mainClass>
+                            <mainClass>no.kantega.polltibot.mains.TrainInCloud</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
