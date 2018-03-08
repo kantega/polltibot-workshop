@@ -1,10 +1,10 @@
-package no.kantega.polltibot;
+package no.kantega.polltibot.mains;
 
+import no.kantega.polltibot.Corpus;
+import no.kantega.polltibot.Util;
 import no.kantega.polltibot.twitter.TwitterClient;
 import no.kantega.polltibot.twitter.TwitterStore;
 import org.kantega.kson.parser.JsonWriter;
-import org.kantega.niagara.Source;
-import org.kantega.niagara.Task;
 
 import java.time.Duration;
 

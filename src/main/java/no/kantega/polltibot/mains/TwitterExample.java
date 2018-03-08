@@ -1,4 +1,4 @@
-package no.kantega.polltibot;
+package no.kantega.polltibot.mains;
 
 import java.util.Scanner;
 import com.github.scribejava.core.builder.ServiceBuilder;
@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutionException;
 
 public final class TwitterExample {
 
-    private static final String PROTECTED_RESOURCE_URL = "https://api.twitter.com/1.1/account/verify_credentials.json";
 
     private TwitterExample() {
     }

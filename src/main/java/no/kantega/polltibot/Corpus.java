@@ -2,5 +2,5 @@ package no.kantega.polltibot;
 
 public enum Corpus {
 
-    all, politi, polititrondelag,diktsamling
+    all, politi, polititrondelag,Ibsen
 }

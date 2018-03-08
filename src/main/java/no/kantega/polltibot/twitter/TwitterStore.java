@@ -6,6 +6,7 @@ import fj.P3;
 import fj.Unit;
 import fj.data.List;
 import no.kantega.polltibot.Corpus;
+import no.kantega.polltibot.ai.pipeline.MLTask;
 import org.kantega.niagara.Task;
 
 import java.io.File;
@@ -13,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 public class TwitterStore {
 
@@ -81,25 +83,29 @@ public class TwitterStore {
         });
     }
 
-    public Task<List<P3<Long, String,String >>> list(Corpus corpus) {
-        return Task.tryTask(() -> {
+    public MLTask<List<P3<Long, String, String>>> tweets(Corpus corpus) {
+        return MLTask.trySupply(() -> {
             PreparedStatement s = connection.prepareStatement("select id,text,source from tweets where corpus = ?");
-            s.setString(1,corpus.name());
+            s.setString(1, corpus.name());
             ResultSet rs = s.executeQuery();
-            List.Buffer<P3<Long, String,String>> buffer = new List.Buffer<>();
+            List.Buffer<P3<Long, String, String>> buffer = new List.Buffer<>();
             while (rs.next()) {
-                buffer.snoc(P.p(rs.getLong(1), rs.getString(2),rs.getString(3)));
+                buffer.snoc(P.p(rs.getLong(1), rs.getString(2), rs.getString(3)));
             }
             return buffer.toList();
         });
     }
 
-    public Task<Unit> deleteCorpus(Corpus corpus){
-        return Task.tryTask(()->{
+    public MLTask<Stream<String>> corpus(Corpus corpus) {
+        return tweets(corpus).map(l -> l.toJavaList().stream()).map(s -> s.map(P3::_2));
+    }
+
+    public MLTask<Unit> deleteCorpus(Corpus corpus) {
+        return MLTask.trySupply(() -> {
 
 
             PreparedStatement s = connection.prepareStatement("delete from tweets where corpus = ?");
-            s.setString(1,corpus.name());
+            s.setString(1, corpus.name());
 
             s.execute();
             return Unit.unit();
@@ -107,7 +113,7 @@ public class TwitterStore {
         });
     }
 
-    public long count(){
+    public long count() {
         return counter.get();
     }
 }

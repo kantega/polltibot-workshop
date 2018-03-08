@@ -1,5 +1,6 @@
-package no.kantega.polltibot;
+package no.kantega.polltibot.mains;
 
+import no.kantega.polltibot.Corpus;
 import no.kantega.polltibot.twitter.TwitterStore;
 
 public class DeleteCorpusMain {

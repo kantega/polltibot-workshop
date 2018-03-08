@@ -19,34 +19,34 @@ public interface StopCondition<O> extends Function<O, Either<String, StopConditi
 
     static <O> StopCondition<O> condition(String name, Predicate<O> pred) {
         return value ->
-            pred.test(value)
-            ? left(name)
-            : right(condition(name, pred));
+                pred.test(value)
+                        ? left(name)
+                        : right(condition(name, pred));
     }
 
     static <O> StopCondition<O> checkEvery(int delay, int interval, StopCondition<O> sc) {
         return value ->
-            delay >= interval
-            ? sc.apply(value).right().map(next -> checkEvery(delay + 1, interval, sc))
-            : right(checkEvery(delay + 1, interval, sc));
+                delay >= interval
+                        ? sc.apply(value).right().map(next -> checkEvery(delay + 1, interval, sc))
+                        : right(checkEvery(delay + 1, interval, sc));
     }
 
 
     static <O> StopCondition<O> or(StopCondition<O> one, StopCondition<O> other) {
         return value -> {
-            Either<String, StopCondition<O>> oneResult   = one.apply(value);
+            Either<String, StopCondition<O>> oneResult = one.apply(value);
             Either<String, StopCondition<O>> otherResult = other.apply(value);
 
             return oneResult.either(
-                oneStop ->
-                    otherResult.either(
-                        otherStop -> left(oneStop + " and " + otherStop),
-                        otherCont -> left(oneStop)),
-                oneCont ->
-                    otherResult.either(
-                        otherStop -> left(otherStop),
-                        otherCont -> right(or(oneCont, otherCont))
-                    )
+                    oneStop ->
+                            otherResult.either(
+                                    otherStop -> left(oneStop + " and " + otherStop),
+                                    otherCont -> left(oneStop)),
+                    oneCont ->
+                            otherResult.either(
+                                    otherStop -> left(otherStop),
+                                    otherCont -> right(or(oneCont, otherCont))
+                            )
             );
         };
     }
@@ -54,9 +54,9 @@ public interface StopCondition<O> extends Function<O, Either<String, StopConditi
 
     static <O> StopCondition<O> times(int max) {
         return value ->
-            max <= 0
-            ? left("Max iterations reached")
-            : right(times(max - 1));
+                (max - 1) <= 0
+                        ? left("Max iterations reached")
+                        : right(times(max - 1));
     }
 
 

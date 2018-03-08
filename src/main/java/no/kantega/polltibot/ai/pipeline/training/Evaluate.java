@@ -1,6 +1,7 @@
 package no.kantega.polltibot.ai.pipeline.training;
 
 import fj.data.Set;
+import no.kantega.polltibot.ai.pipeline.MLTask;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.dataset.DataSet;

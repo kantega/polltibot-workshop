@@ -4,7 +4,7 @@ import fj.Ord;
 import fj.data.IterableW;
 import fj.data.List;
 import fj.data.Set;
-import no.kantega.polltibot.ai.pipeline.training.MLTask;
+import no.kantega.polltibot.ai.pipeline.MLTask;
 
 import java.time.Instant;
 import java.time.ZoneOffset;

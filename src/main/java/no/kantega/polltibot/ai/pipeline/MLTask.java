@@ -1,19 +1,20 @@
-package no.kantega.polltibot.ai.pipeline.training;
+package no.kantega.polltibot.ai.pipeline;
 
 import fj.data.Either;
 import fj.function.Try0;
-import no.kantega.polltibot.ai.pipeline.MLPipe;
+import no.kantega.polltibot.ai.pipeline.training.StopCondition;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.dataset.DataSet;
 
+import java.io.PrintStream;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.Stream;
 
 public interface MLTask<A> {
@@ -36,6 +37,14 @@ public interface MLTask<A> {
         return () -> CompletableFuture.completedFuture(value);
     }
 
+    static <A> MLTask<A> fail(Exception e) {
+        return () -> {
+            CompletableFuture<A> fut = new CompletableFuture<>();
+            fut.completeExceptionally(e);
+            return fut;
+        };
+    }
+
     static <A> MLTask<A> supplier(Supplier<A> supplier) {
         return () -> CompletableFuture.completedFuture(supplier.get());
     }
@@ -50,15 +59,31 @@ public interface MLTask<A> {
         });
     }
 
-    static MLTask<MultiLayerNetwork> fit(
-            MultiLayerNetwork net,
-            Stream<DataSet> records
-    ) {
+    static MLTask<MultiLayerNetwork> fit(MultiLayerNetwork net, Stream<DataSet> records) {
 
         return supplier(() -> {
             records.forEach(net::fit);
             return net;
         });
+    }
+
+    default MLTask<A> time(String name, PrintStream out) {
+        return time(
+                start -> out.println("Start " + name + " at " + start),
+                (start, maybeEx) ->
+                        out.println("End   " + name + " " + Duration.between(start, Instant.now()) + maybeEx.map(ex -> " with " + ex.getClass().getSimpleName() + ":" + ex.getMessage()).orElse(""))
+        );
+    }
+
+
+    default MLTask<A> time(Consumer<Instant> onStart, BiConsumer<Instant, Optional<Throwable>> onEnd) {
+        return () -> {
+            Instant instant = Instant.now();
+            onStart.accept(instant);
+            return execute().whenComplete((aOrNull, exorNull) -> {
+                onEnd.accept(instant, Optional.ofNullable(exorNull));
+            });
+        };
     }
 
     default <B> MLTask<B> pipe(MLPipe<A, B> pipe) {

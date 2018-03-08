@@ -1,5 +1,6 @@
-package no.kantega.polltibot;
+package no.kantega.polltibot.mains;
 
+import no.kantega.polltibot.Corpus;
 import no.kantega.polltibot.twitter.TwitterStore;
 import org.kantega.kson.JsonResult;
 import org.kantega.kson.json.JsonValue;
@@ -11,7 +12,7 @@ public class ListTweetsMain {
     public static void main(String[] args) {
         TwitterStore store = TwitterStore.getStore();
 
-        store.list(Corpus.politi).executeAndAwait(Duration.ofSeconds(30)).orThrow().foreachDoEffect(pair->{
+        store.tweets(Corpus.politi).executeAndAwait().foreachDoEffect(pair->{
             JsonResult<JsonValue> json =JsonParser.parse(pair._3());
             String text = json.fieldAsString("text").orThrow();
             String date = json.fieldAsString("created_at").orThrow();

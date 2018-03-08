@@ -1,8 +1,9 @@
 package no.kantega.polltibot.ai.pipeline.persistence;
 
+import fj.Unit;
 import fj.data.List;
 import fj.data.Set;
-import no.kantega.polltibot.ai.pipeline.training.MLTask;
+import no.kantega.polltibot.ai.pipeline.MLTask;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.output.CloseShieldOutputStream;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -11,6 +12,8 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -28,6 +31,12 @@ public class PipelineConfig implements Serializable {
 
     public static PipelineConfig newEmptyConfig(MultiLayerNetwork net) {
         return new PipelineConfig(net, new HashMap<>());
+    }
+
+    public static MLTask<PipelineConfig> read(Path path) {
+        return MLTask.trySupply(() ->
+                Files.readAllBytes(path)
+        ).bind(PipelineConfig::read);
     }
 
     public static MLTask<PipelineConfig> read(byte[] input) {
@@ -73,7 +82,15 @@ public class PipelineConfig implements Serializable {
         return (HashMap<String, Object>) ois.readObject();
     }
 
-    public static MLTask<byte[]> write(PipelineConfig config) {
+    public static MLTask<Unit> save(PipelineConfig config, Path path) {
+        return asBytes(config).bind(bytes -> MLTask.trySupply(() -> {
+            Files.createDirectories(path.getParent());
+            Files.write(path, bytes);
+            return Unit.unit();
+        }));
+    }
+
+    public static MLTask<byte[]> asBytes(PipelineConfig config) {
         return MLTask.trySupply(() -> {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ZipOutputStream zipfile = new ZipOutputStream(new CloseShieldOutputStream(bos));
