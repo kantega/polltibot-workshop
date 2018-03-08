@@ -1,5 +1,6 @@
 package no.kantega.polltibot.mains;
 
+import com.codahale.metrics.ConsoleReporter;
 import no.kantega.polltibot.ai.pipeline.persistence.PipelineConfig;
 
 import java.nio.file.Path;
@@ -15,5 +16,6 @@ public class RnnTrainMain {
 
     public static void main(String[] args) {
         Training.train(fastTextPath).bind(output -> PipelineConfig.save(output._1(), modelPath).time("Storing to disk", System.out)).executeAndAwait();
+        ConsoleReporter.forRegistry(Training.registry).build().report();
     }
 }

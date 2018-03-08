@@ -1,5 +1,6 @@
 package no.kantega.polltibot;
 
+import com.codahale.metrics.Timer;
 import fj.Ord;
 import fj.P;
 import no.kantega.polltibot.ai.pipeline.LabelledRecord;
@@ -17,6 +18,16 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class StreamTransformers {
+
+    public static <A,B> Function<A,B> time(Timer timer, Function<A,B> t){
+        return a-> {
+            try {
+                return timer.time(()->t.apply(a));
+            } catch (Exception e) {
+                throw  new RuntimeException(e);
+            }
+        };
+    }
 
     public static <A> StreamTransformer<List<A>, List<A>> padRight(A a, int size) {
         return transformer(list -> {

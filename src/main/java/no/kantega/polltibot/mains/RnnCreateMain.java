@@ -20,7 +20,7 @@ public class RnnCreateMain {
                 FastTextMap.load(fastTextPath).time("Loading FastText Vectors",System.out)
                         .bind(ftm ->
                                 PipelineConfig.read(modelPath).time("Reading model", System.out)
-                                        .bind(config -> Training.generate(ftm, config, "jalla", 15)).time("Generating tweet", System.out)).executeAndAwait();
+                                        .bind(config -> Training.generate(ftm, config, "Tromsøbrua", 15)).time("Generating tweet", System.out)).executeAndAwait();
 
         String tweet = words.stream().reduce((a, b) -> (a + " " + b)).orElse("Nothing tweeted!");
 

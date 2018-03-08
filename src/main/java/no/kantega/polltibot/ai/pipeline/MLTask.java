@@ -1,5 +1,6 @@
 package no.kantega.polltibot.ai.pipeline;
 
+import com.codahale.metrics.Timer;
 import fj.data.Either;
 import fj.function.Try0;
 import no.kantega.polltibot.ai.pipeline.training.StopCondition;
@@ -59,10 +60,10 @@ public interface MLTask<A> {
         });
     }
 
-    static MLTask<MultiLayerNetwork> fit(MultiLayerNetwork net, Stream<DataSet> records) {
+    static MLTask<MultiLayerNetwork> fit(Timer timer, MultiLayerNetwork net, Stream<DataSet> records) {
 
         return supplier(() -> {
-            records.forEach(net::fit);
+            records.forEach(ds->timer.time(()->net.fit(ds)));
             return net;
         });
     }
@@ -75,6 +76,14 @@ public interface MLTask<A> {
         );
     }
 
+    default MLTask<A> time(Timer metricsTimer){
+        return () -> {
+            Timer.Context time = metricsTimer.time();
+            return execute().whenComplete((aOrNull, exorNull) -> {
+                time.stop();
+            });
+        };
+    }
 
     default MLTask<A> time(Consumer<Instant> onStart, BiConsumer<Instant, Optional<Throwable>> onEnd) {
         return () -> {

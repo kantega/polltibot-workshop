@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Random;
 
 import static no.kantega.polltibot.NetInputToken.Word;
+import static no.kantega.polltibot.StreamTransformers.*;
 import static no.kantega.polltibot.ai.pipeline.Dl4jUtils.atIndex;
 import static org.nd4j.linalg.indexing.NDArrayIndex.all;
 import static org.nd4j.linalg.indexing.NDArrayIndex.point;
@@ -41,25 +42,27 @@ public class Training {
 
     static final Random random = new Random();
     static final int maxWords = 5;
-    static final int miniBatchSize = 10;
+    static final int miniBatchSize = 3;
 
-    static MetricRegistry registry = new MetricRegistry();
+    public static MetricRegistry registry = new MetricRegistry();
     static Timer trainTimer = registry.timer("Fit network");
-
+    static Timer toDataSetTimer = registry.timer("To dataset");
+    static Timer conversionTimer = registry.timer("Conversion");
 
     public static MLTask<P2<PipelineConfig, FastTextMap>> train(Path pathToFastTextFile) {
         return FastTextMap.load(pathToFastTextFile).time("FastTextMapping", System.out)
                 .bind(fastText ->
                         TwitterStore.getStore().corpus(Corpus.politi)
-                                .map(StreamTransformers.words())
-                                .map(StreamTransformers.transformList(fastText::asToken))
-                                .map(StreamTransformers.nonEmpty())
-                                .map(StreamTransformers.split(maxWords))
-                                .map(StreamTransformers.padRight(NetInputToken.padding(), maxWords))
-                                .map(StreamTransformers.batch(miniBatchSize))
-                                .map(StreamTransformers.transformer(Training::toRnnDataSet))
-                                .apply(createNet(), MLTask::fit).time("Training epoch", System.out)
-                                .repeat(() -> StopCondition.times(1))
+                                .map(s->s.limit(100))
+                                .map(words())
+                                .map(transformList(fastText::asToken))
+                                .map(nonEmpty())
+                                .map(split(maxWords))
+                                .map(padRight(NetInputToken.padding(), maxWords))
+                                .map(batch(miniBatchSize))
+                                .map(transformer(Training::toRnnDataSet))
+                                .apply(createNet(), (net,s)->MLTask.fit(trainTimer,net,s)).time("Training epoch", System.out)
+                                .repeat(() -> StopCondition.times(100))
                                 .map(PipelineConfig::newEmptyConfig)
                                 .map(cfg -> P.p(cfg, fastText))).time("Total", System.out);
     }
@@ -70,6 +73,7 @@ public class Training {
             MultiLayerNetwork net = config.net;
             String inputWord = initWord;
             List<String> generated = new ArrayList<>();
+            generated.add(initWord);
             net.rnnClearPreviousState();
             INDArray initializationInput = Nd4j.zeros(1, 300);
             net.rnnTimeStep(initializationInput);
@@ -128,14 +132,17 @@ public class Training {
     //Why 'f' order here? See http://deeplearning4j.org/usingrnns.html#data section "Alternative: Implementing a custom DataSetIterator"
 
 
-    static INDArray features = Nd4j.create(new int[]{miniBatchSize, 300, maxWords}, 'f');
-    static INDArray labels = Nd4j.create(new int[]{miniBatchSize, 300, maxWords}, 'f');
 
-    static INDArray featuresMask = Nd4j.create(new int[]{miniBatchSize, maxWords}, 'f');
-    static INDArray labelsMask = Nd4j.create(new int[]{miniBatchSize, maxWords}, 'f');
+
+
 
     public static DataSet toRnnDataSet(List<List<NetInputToken>> batch) {
+        Timer.Context context = toDataSetTimer.time();
         int currMinibatchSize = batch.size();
+         INDArray features = Nd4j.create(new int[]{miniBatchSize, 300, maxWords-1}, 'f');
+         INDArray labels = Nd4j.create(new int[]{miniBatchSize, 300, maxWords-1}, 'f');
+         INDArray featuresMask = Nd4j.create(new int[]{miniBatchSize, maxWords-1}, 'f');
+         INDArray labelsMask = Nd4j.create(new int[]{miniBatchSize, maxWords-1}, 'f');
 
         for (int i = 0; i < currMinibatchSize; i++) {
             List<NetInputToken> tokens = batch.get(i);
@@ -145,7 +152,7 @@ public class Training {
             for (int j = 0; j < tokens.size() - 1; j++) {
                 NetInputToken token = tokens.get(j + 1);
                 if (token.isWord()) {
-                    Word nextToken = token.asWord();    //Next character to predict
+                    Word nextToken = token.asWord();
                     features.put(atIndex(point(i), all(), point(j)), prevToken.vector);
                     labels.put(atIndex(point(i), all(), point(j)), nextToken.vector);
                     prevToken = nextToken;
@@ -154,7 +161,7 @@ public class Training {
                 }
             }
         }
-
+        context.stop();
         return new DataSet(features, labels, featuresMask, labelsMask);
     }
 
