@@ -13,10 +13,7 @@ import no.kantega.polltibot.ai.pipeline.persistence.PipelineConfig;
 import no.kantega.polltibot.ai.pipeline.training.StopCondition;
 import no.kantega.polltibot.twitter.TwitterStore;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.BackpropType;
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.Updater;
+import org.deeplearning4j.nn.conf.*;
 import org.deeplearning4j.nn.conf.layers.GravesLSTM;
 import org.deeplearning4j.nn.conf.layers.RnnOutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
@@ -94,14 +91,17 @@ public class Training {
     }
 
     public static MultiLayerNetwork createNet() {
-        int lstmLayerSize = 400;
+        int lstmLayerSize = 100;
 
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).iterations(1)
-                .learningRate(0.1)
+                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                .gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
+                .gradientNormalizationThreshold(1.0)
+                .iterations(1)
+                .learningRate(0.002)
                 .seed(12345)
                 .regularization(true)
-                .l2(0.001)
+                .l2(0.0001)
                 .weightInit(WeightInit.XAVIER)
                 .updater(Updater.RMSPROP)
                 .list()
