@@ -61,7 +61,7 @@ public class Training {
                                 .map(padRight(NetInputToken.padding(), maxWords))
                                 .map(batch(miniBatchSize))
                                 .map(transformer(Training::toRnnDataSet))
-                                .apply(createNet(), (net,s)->MLTask.fit(trainTimer,net,s)).time("Training epoch", System.out)
+                                .apply(createNet(), MLTask::fit).time("Training epoch", System.out)
                                 .repeat(() -> StopCondition.times(100))
                                 .map(PipelineConfig::newEmptyConfig)
                                 .map(cfg -> P.p(cfg, fastText))).time("Total", System.out);

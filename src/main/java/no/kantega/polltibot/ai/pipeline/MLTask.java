@@ -60,10 +60,10 @@ public interface MLTask<A> {
         });
     }
 
-    static MLTask<MultiLayerNetwork> fit(Timer timer, MultiLayerNetwork net, Stream<DataSet> records) {
+    static MLTask<MultiLayerNetwork> fit(MultiLayerNetwork net, Stream<DataSet> records) {
 
         return supplier(() -> {
-            records.forEach(ds->timer.time(()->net.fit(ds)));
+            records.forEach(net::fit);
             return net;
         });
     }
