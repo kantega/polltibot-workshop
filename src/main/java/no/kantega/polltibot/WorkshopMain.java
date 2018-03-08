@@ -8,7 +8,7 @@ public class WorkshopMain {
         //StreamTransformers inneholder mye nyttig
 
         //Lag en MLTask<Stream<String>> som laster treningsdata
-        //Feks med Files.load(Path) og MLTask.loadEpoch
+        //Feks med Files.lines(Path) og MLTask.loadEpoch
 
 
         //Lag en pipeline som:

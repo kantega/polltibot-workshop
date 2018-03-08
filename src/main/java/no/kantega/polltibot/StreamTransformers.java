@@ -1,5 +1,7 @@
 package no.kantega.polltibot;
 
+import fj.Ord;
+import fj.P;
 import no.kantega.polltibot.ai.pipeline.LabelledRecord;
 import no.kantega.polltibot.ai.pipeline.StreamTransformer;
 import no.kantega.polltibot.ai.pipeline.UnlabeledRecord;
@@ -34,8 +36,67 @@ public class StreamTransformers {
                 );
     }
 
-    public static StreamTransformer<String, Stream<String>> words() {
-        return transformer(s -> Stream.of(s.split(" ")));
+    public static <A> StreamTransformer<List<A>,List<A>> split(int size){
+        return stream-> stream.flatMap(list->{
+            List<List<A>> chunkList = new ArrayList<>();
+            for (int i = 0 ; i <  list.size() ; i += size) {
+                chunkList.add(new ArrayList<>(list.subList(i , i + size >= list.size() ? list.size() : i + size)));
+            }
+            return chunkList.stream();
+        });
+    }
+
+
+    public static <A, B> StreamTransformer<List<A>, List<B>> transformList(Function<A, B> f) {
+        return transformer(list -> list.stream().map(f).collect(Collectors.toList()));
+    }
+
+    public static <A> StreamTransformer<List<Optional<A>>, List<A>> nonEmpty() {
+        return transformer(list -> list.stream().filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList()));
+    }
+
+    public static StreamTransformer<String, List<String>> words() {
+        return transformer(s -> tokens(s));
+    }
+
+    private static List<String> tokens(String line) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder word = new StringBuilder();
+        for (char c : line.toCharArray()) {
+            if (Character.isAlphabetic(c)) {
+                word.append(c);
+            } else {
+                if (word.length() > 0) {
+                    tokens.add(word.toString());
+                    word = new StringBuilder();
+                }
+                if (!Character.isWhitespace(c))
+                    tokens.add(digitToWord(String.valueOf(c)));
+            }
+        }
+        if (word.length() > 0) {
+            tokens.add(word.toString());
+        }
+
+        return tokens;
+    }
+    private static fj.data.TreeMap<String,String> d2w =
+            fj.data.TreeMap.treeMap(
+                    Ord.stringOrd,
+                    P.p("0","null"),
+                    P.p("1","en"),
+                    P.p("2","to"),
+                    P.p("3","tre"),
+                    P.p("4","fire"),
+                    P.p("5","fem"),
+                    P.p("6","seks"),
+                    P.p("7","syv"),
+                    P.p("8","åtte"),
+                    P.p("9","ni")
+            );
+
+    private static String digitToWord(String digit){
+        return d2w.get(digit).orSome(digit);
     }
 
     public static <A> StreamTransformer<A, A> prepend(Stream<A> prefix) {
