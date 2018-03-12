@@ -18,6 +18,13 @@ gsutil cp "gs://${BUCKET}/"** .
 apt-get update
 apt-get install -t jessie-backports -yq openjdk-8-jdk
 
+if ! dpkg-query -W cuda-8-0; then
+      curl -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+      dpkg -i ./cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+      apt-get update
+      apt-get install cuda-8-0 -y
+fi
+
 # Make Java8 the default
 update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
@@ -44,7 +51,7 @@ service google-fluentd restart &
 cd /opt/pollti-workshop
 
 # Run jar
-java -jar /opt/pollti-workshop/pollti-workshop.jar
+java -jar /opt/pollti-workshop/pollti-workshop.jar -Xmx4G
 cd /
 
 echo "Startup Complete"

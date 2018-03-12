@@ -9,7 +9,7 @@ ZONE=europe-west1-b
 
 GROUP=pollti-workshop-group
 TEMPLATE=$GROUP-tmpl
-MACHINE_TYPE=g1-small
+MACHINE_TYPE=n1-standard-1
 IMAGE_FAMILY=debian-8
 IMAGE_PROJECT=debian-cloud
 STARTUP_SCRIPT=startupScript.sh
@@ -67,7 +67,9 @@ gce)
   #  --description "Allow port 80 access to instances tagged with ${TAGS}"
 
   gcloud compute instances create pollti-workshop-instance \
-    --machine-type=${MACHINE_TYPE} \
+    --custom-cpu 1 \
+    --custom-memory 5 \
+    --accelerator type=nvidia-tesla-k80,count=1 \
     --scopes=${SCOPES} \
     --metadata-from-file startup-script=${STARTUP_SCRIPT} \
     --zone=${ZONE} \
