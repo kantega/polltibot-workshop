@@ -49,7 +49,7 @@ public class WorkshopTasks {
         return MLPipe.fail(ANSI.redUncheck("Task 6 not implemented yet"));
     }
 
-    static public MLPipe<Stream<List<List<Token>>>, Stream<DataSet>> toDataset() {
+    static public MLPipe<Stream<List<List<Token>>>, Stream<DataSet>> toDataset(FastTextMap fastTextMap) {
         return MLPipe.fail(ANSI.redUncheck("Task 7 not implemented yet"));
     }
 
@@ -74,7 +74,7 @@ public class WorkshopTasks {
                                 .then(truncate()).print(ANSI.greenCheck("Truncated tweets"))
                                 .then(pad()).print(ANSI.greenCheck("Lists padded"))
                                 .then(batch()).print(ANSI.greenCheck("Tweets put in minibatch"))
-                                .then(toDataset()).print(ANSI.greenCheck("Converted to dataset"))
+                                .then(toDataset(fastText)).print(ANSI.greenCheck("Converted to dataset"))
                                 .then(fit()).print(ANSI.greenCheck("Fitted net to epoch"))
                                 .then(repeatUntil())
                                 .then(asConfiguration()).print(ANSI.greenCheck("Stored in config object"))
