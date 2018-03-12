@@ -2,11 +2,9 @@ package no.kantega.polltibot.workshop.tools;
 
 import fj.P;
 import fj.P2;
-import no.kantega.polltibot.twitter.Corpus;
 import no.kantega.polltibot.ai.pipeline.MLTask;
 import no.kantega.polltibot.ai.pipeline.persistence.PipelineConfig;
 import no.kantega.polltibot.ai.pipeline.training.StopCondition;
-import no.kantega.polltibot.twitter.TwitterStore;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
@@ -25,8 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static no.kantega.polltibot.workshop.Settings.*;
 import static no.kantega.polltibot.workshop.Settings.maxWords;
+import static no.kantega.polltibot.workshop.Settings.miniBatchSize;
 import static no.kantega.polltibot.workshop.tools.StreamTransformers.*;
 
 public class VaeTraining {

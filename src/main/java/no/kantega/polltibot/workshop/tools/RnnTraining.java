@@ -4,11 +4,9 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import fj.P;
 import fj.P2;
-import no.kantega.polltibot.twitter.Corpus;
 import no.kantega.polltibot.ai.pipeline.MLTask;
 import no.kantega.polltibot.ai.pipeline.persistence.PipelineConfig;
 import no.kantega.polltibot.ai.pipeline.training.StopCondition;
-import no.kantega.polltibot.twitter.TwitterStore;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.*;
 import org.deeplearning4j.nn.conf.layers.GravesLSTM;
@@ -28,11 +26,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static no.kantega.polltibot.workshop.tools.Token.Word;
-import static no.kantega.polltibot.workshop.Settings.*;
-import static no.kantega.polltibot.workshop.Settings.maxWords;
-import static no.kantega.polltibot.workshop.tools.StreamTransformers.*;
 import static no.kantega.polltibot.ai.pipeline.Dl4jUtils.atIndex;
+import static no.kantega.polltibot.workshop.Settings.maxWords;
+import static no.kantega.polltibot.workshop.Settings.miniBatchSize;
+import static no.kantega.polltibot.workshop.tools.StreamTransformers.*;
+import static no.kantega.polltibot.workshop.tools.Token.Word;
 import static org.nd4j.linalg.indexing.NDArrayIndex.all;
 import static org.nd4j.linalg.indexing.NDArrayIndex.point;
 
@@ -53,7 +51,7 @@ public class RnnTraining {
     public static MLTask<P2<PipelineConfig, FastTextMap>> trainRnn(Path pathToFastTextFile) {
         return FastTextMap.load(pathToFastTextFile).time("FastTextMapping", System.out)
                 .bind(fastText ->
-                        TwitterStore.getStore().corpus(Corpus.politi)
+                        Util.loadTweets()
                                 .map(words())
                                 .map(transformList(fastText::asToken))
                                 .map(nonEmpty())

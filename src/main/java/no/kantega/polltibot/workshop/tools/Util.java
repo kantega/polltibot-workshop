@@ -8,7 +8,6 @@ import fj.data.List;
 import fj.data.Option;
 import no.kantega.polltibot.ai.pipeline.MLPipe;
 import no.kantega.polltibot.ai.pipeline.MLTask;
-import org.kantega.niagara.Task;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
