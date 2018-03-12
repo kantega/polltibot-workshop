@@ -10,6 +10,7 @@ import no.kantega.polltibot.ai.pipeline.MLPipe;
 import no.kantega.polltibot.ai.pipeline.MLTask;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -17,14 +18,20 @@ import java.util.stream.Stream;
 
 public class Util {
 
-    public static MLTask<Stream<String>> load(String resource) {
-        return MLTask.trySupply(() -> {
-            InputStream in = Util.class.getClassLoader()
-                    .getResourceAsStream(resource);
+    public static MLTask<Stream<String>> load(byte[] resource) {
+        return load(new ByteArrayInputStream(resource));
+    }
 
-            return new BufferedReader(new InputStreamReader(in,
-                    StandardCharsets.UTF_8)).lines();
-        });
+    public static MLTask<Stream<String>> load(String resource) {
+        return MLTask.trySupply(() ->
+                Util.class.getClassLoader().getResourceAsStream(resource))
+                .bind(Util::load);
+    }
+
+
+    public static MLTask<Stream<String>> load(InputStream in) {
+        return MLTask.trySupply(() -> new BufferedReader(new InputStreamReader(in,
+                StandardCharsets.UTF_8)).lines());
     }
 
     public static MLTask<Stream<String>> loadTweets() {

@@ -12,7 +12,7 @@ BUCKET=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/at
 echo "Project ID: ${PROJECTID}  Bucket: ${BUCKET}"
 
 # get our file(s)
-gsutil cp "gs://${BUCKET}/gce/"** .
+gsutil cp "gs://${BUCKET}/"** .
 
 # Install dependencies from apt
 apt-get update
@@ -26,8 +26,8 @@ mkdir -p /opt/pollti-workshop/temp
 mkdir -p /var/log/pollti-workshop
 
 # very important - by renaming the war to root.war, it will run as the root servlet.
-mv robo-madness-server-1.0-SNAPSHOT-jar-with-dependencies.jar /opt/pollti-workshop/pollti-workshop.jar
-
+mv pollti-bot-workshop-1.0-SNAPSHOT-jar-with-dependencies.jar /opt/pollti-workshop/pollti-workshop.jar
+mv wiki.no.vec /opt/pollti-workshop/temp/wiki.no.vec
 
 
 

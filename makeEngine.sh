@@ -21,7 +21,7 @@ MAX_INSTANCES=10
 TARGET_UTILIZATION=0.6
 
 SERVICE=ml-task
-JAR=robo-madness-server-1.0-SNAPSHOT-jar-with-dependencies.jar
+JAR=pollti-bot-workshop-1.0-SNAPSHOT-jar-with-dependencies.jar
 # [END useful]
 
 function print_usage() {

@@ -1,5 +1,6 @@
 package no.kantega.polltibot.workshop.tools;
 
+import fj.function.Try0;
 import no.kantega.polltibot.ai.pipeline.MLTask;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -9,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class FastTextMap {
 
@@ -24,18 +27,26 @@ public class FastTextMap {
         this.normsCol = normsCol;
     }
 
+    public static MLTask<FastTextMap> load(byte[] bytes) {
+        return load(() -> Util.load(bytes).executeAndAwait());
+    }
+
     public static MLTask<FastTextMap> load(Path path) {
+        return load(() -> Files.lines(path));
+    }
+
+    public static MLTask<FastTextMap> load(Try0<Stream<String>, Exception> lines) {
         return MLTask.trySupply(() -> {
 
             SortedMap<String, Integer> wordToIndex = new TreeMap<>();
             SortedMap<Integer, String> indexToWord = new TreeMap<>();
 
-            String firstLine = Files.lines(path).limit(1).reduce("", (a, b) -> a + b);
+            String firstLine = lines.f().limit(1).reduce("", (a, b) -> a + b);
             int entries = Integer.parseInt(firstLine.split(" ")[0]);
 
             INDArray table = Nd4j.create(entries, 300);
             AtomicInteger counter = new AtomicInteger();
-            Files.lines(path).skip(1).forEach(line -> {
+            lines.f().skip(1).forEach(line -> {
                 int row = counter.getAndIncrement();
                 String[] parts = line.split(" ");
                 String word = parts[0];
@@ -59,10 +70,12 @@ public class FastTextMap {
                         .ofNullable(wordToIndex.get(word.toLowerCase()))
                         .map(row -> Token.toToken(word, table.getRow(row)));
     }
+
     Random r = new Random();
-    public Token randomWord(){
+
+    public Token randomWord() {
         int row = r.nextInt(wordToIndex.size());
-        return Token.toToken(indexToWord.get(row),table.getRow(row));
+        return Token.toToken(indexToWord.get(row), table.getRow(row));
     }
 
     public List<String> wordForVec(INDArray array, int topN) {
@@ -80,8 +93,6 @@ public class FastTextMap {
         counter.keepTopNElements(topN);
         return counter.keySetSorted();
     }
-
-
 
 
 }

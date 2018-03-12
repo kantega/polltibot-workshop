@@ -31,19 +31,23 @@ public class VaeTraining {
 
     public static MLTask<P2<PipelineConfig, FastTextMap>> trainVAE(Path pathToFastTextFile) {
         return FastTextMap.load(pathToFastTextFile).time("FastTextMapping", System.out)
-                .bind(fastText ->
-                        Util.loadTweets()
-                                .map(words())
-                                .map(transformList(fastText::asToken))
-                                .map(nonEmpty())
-                                .map(truncate(maxWords))
-                                .map(padRight(Token.padding(), maxWords))
-                                .map(batch(miniBatchSize))
-                                .map(transformer(list -> VaeTraining.toVAEDataSet(fastText, list)))
-                                .apply(createVAE(), MLTask::fit).time("Training epoch", System.out)
-                                .repeat(() -> StopCondition.times(100))
-                                .map(PipelineConfig::newEmptyConfig)
-                                .map(cfg -> P.p(cfg, fastText))).time("Total", System.out);
+                .bind(VaeTraining::trainVAE);
+    }
+
+    public static MLTask<P2<PipelineConfig, FastTextMap>> trainVAE(FastTextMap fastText) {
+        return
+                Util.loadTweets()
+                        .map(words())
+                        .map(transformList(fastText::asToken))
+                        .map(nonEmpty())
+                        .map(truncate(maxWords))
+                        .map(padRight(Token.padding(), maxWords))
+                        .map(batch(miniBatchSize))
+                        .map(transformer(list -> VaeTraining.toVAEDataSet(fastText, list)))
+                        .apply(createVAE(), MLTask::fit).time("Training epoch", System.out)
+                        .repeat(() -> StopCondition.times(100))
+                        .map(PipelineConfig::newEmptyConfig)
+                        .map(cfg -> P.p(cfg, fastText));
     }
 
 

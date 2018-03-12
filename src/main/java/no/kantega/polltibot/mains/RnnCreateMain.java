@@ -8,7 +8,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static no.kantega.polltibot.mains.VaeCreateMain.fastTextPath;
+import static no.kantega.polltibot.workshop.Settings.fastTextPath;
+
 
 public class RnnCreateMain {
 

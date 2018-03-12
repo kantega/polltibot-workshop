@@ -1,5 +1,6 @@
 package no.kantega.polltibot.mains;
 
+import no.kantega.polltibot.workshop.Settings;
 import no.kantega.polltibot.workshop.tools.FastTextMap;
 import no.kantega.polltibot.ai.pipeline.persistence.PipelineConfig;
 import no.kantega.polltibot.workshop.tools.VaeTraining;
@@ -10,15 +11,14 @@ import java.util.List;
 
 public class VaeCreateMain {
 
-    static final Path fastTextPath =
-            Paths.get(System.getProperty("user.home") + "/data/fastText/wiki.no.vec").toAbsolutePath();
+
 
     static final Path modelPath =
             Paths.get(System.getProperty("user.home") + "/data/vae/pollti.net").toAbsolutePath();
 
     public static void main(String[] args) {
         List<String> words =
-                FastTextMap.load(fastTextPath).time("Loading FastText Vectors",System.out)
+                FastTextMap.load(Settings.fastTextPath).time("Loading FastText Vectors",System.out)
                         .bind(ftm ->
                                 PipelineConfig.read(modelPath).time("Reading model", System.out)
                                         .bind(config -> VaeTraining.generateVae(ftm, config))
