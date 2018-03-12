@@ -1,10 +1,10 @@
-package no.kantega.polltibot;
+package no.kantega.polltibot.workshop.tools;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 
 import java.util.function.Consumer;
 
-public interface NetInputToken {
+public interface Token {
 
 
     default boolean isWord() {
@@ -13,7 +13,10 @@ public interface NetInputToken {
 
     default Word asWord() {
         return (Word) this;
+    }
 
+    default Token wordOr(Token defaultWord) {
+        return isWord() ? asWord() : defaultWord;
     }
 
     default void onWord(Consumer<Word> wordConsumer) {
@@ -24,15 +27,15 @@ public interface NetInputToken {
 
     void consume(Consumer<Word> wordConsumer, Consumer<Padding> paddingConsumer);
 
-    static NetInputToken padding() {
+    static Token padding() {
         return new Padding();
     }
 
-    static NetInputToken toToken(String word, INDArray vector) {
+    static Token toToken(String word, INDArray vector) {
         return new Word(word, vector);
     }
 
-    class Word implements NetInputToken {
+    class Word implements Token {
         public final String word;
         public final INDArray vector;
 
@@ -51,7 +54,7 @@ public interface NetInputToken {
         }
     }
 
-    class Padding implements NetInputToken {
+    class Padding implements Token {
 
 
         @Override

@@ -1,11 +1,9 @@
 package no.kantega.polltibot.twitter;
 
 import fj.P;
-import fj.P2;
 import fj.P3;
 import fj.Unit;
 import fj.data.List;
-import no.kantega.polltibot.Corpus;
 import no.kantega.polltibot.ai.pipeline.MLTask;
 import org.kantega.niagara.Task;
 
@@ -53,7 +51,7 @@ public class TwitterStore {
                 counter.set(rs.getLong("c"));
 
         } catch (SQLException e) {
-            throw new RuntimeException("Could not create tweets database", e);
+            throw new RuntimeException("Could not initialize tweets database", e);
         }
     }
 

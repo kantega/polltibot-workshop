@@ -1,4 +1,4 @@
-package no.kantega.polltibot;
+package no.kantega.polltibot.workshop.tools;
 
 import com.codahale.metrics.Timer;
 import fj.Ord;
@@ -19,12 +19,12 @@ import java.util.stream.StreamSupport;
 
 public class StreamTransformers {
 
-    public static <A,B> Function<A,B> time(Timer timer, Function<A,B> t){
-        return a-> {
+    public static <A, B> Function<A, B> time(Timer timer, Function<A, B> t) {
+        return a -> {
             try {
-                return timer.time(()->t.apply(a));
+                return timer.time(() -> t.apply(a));
             } catch (Exception e) {
-                throw  new RuntimeException(e);
+                throw new RuntimeException(e);
             }
         };
     }
@@ -47,11 +47,11 @@ public class StreamTransformers {
                 );
     }
 
-    public static <A> StreamTransformer<List<A>,List<A>> split(int size){
-        return stream-> stream.flatMap(list->{
+    public static <A> StreamTransformer<List<A>, List<A>> split(int size) {
+        return stream -> stream.flatMap(list -> {
             List<List<A>> chunkList = new ArrayList<>();
-            for (int i = 0 ; i <  list.size() ; i += size) {
-                chunkList.add(new ArrayList<>(list.subList(i , i + size >= list.size() ? list.size() : i + size)));
+            for (int i = 0; i < list.size(); i += size) {
+                chunkList.add(new ArrayList<>(list.subList(i, i + size >= list.size() ? list.size() : i + size)));
             }
             return chunkList.stream();
         });
@@ -74,7 +74,7 @@ public class StreamTransformers {
         List<String> tokens = new ArrayList<>();
         StringBuilder word = new StringBuilder();
         for (char c : line.toCharArray()) {
-            if (Character.isAlphabetic(c)) {
+            if (Character.isAlphabetic(c) || (c == '#')) {
                 word.append(c);
             } else {
                 if (word.length() > 0) {
@@ -91,22 +91,23 @@ public class StreamTransformers {
 
         return tokens;
     }
-    private static fj.data.TreeMap<String,String> d2w =
+
+    private static fj.data.TreeMap<String, String> d2w =
             fj.data.TreeMap.treeMap(
                     Ord.stringOrd,
-                    P.p("0","null"),
-                    P.p("1","en"),
-                    P.p("2","to"),
-                    P.p("3","tre"),
-                    P.p("4","fire"),
-                    P.p("5","fem"),
-                    P.p("6","seks"),
-                    P.p("7","syv"),
-                    P.p("8","åtte"),
-                    P.p("9","ni")
+                    P.p("0", "null"),
+                    P.p("1", "en"),
+                    P.p("2", "to"),
+                    P.p("3", "tre"),
+                    P.p("4", "fire"),
+                    P.p("5", "fem"),
+                    P.p("6", "seks"),
+                    P.p("7", "syv"),
+                    P.p("8", "åtte"),
+                    P.p("9", "ni")
             );
 
-    private static String digitToWord(String digit){
+    private static String digitToWord(String digit) {
         return d2w.get(digit).orSome(digit);
     }
 

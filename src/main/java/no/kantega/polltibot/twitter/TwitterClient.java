@@ -21,7 +21,7 @@ import java.time.Duration;
 public class TwitterClient {
 
     static final F<String,String> statuses = id->"https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name="+id+"&include_rts=1&count=200";
-    static final List<String> politiaccounts =  List.arrayList("PolitiTrondelag","oslopolitiops","polititroms","politifinnmark");
+    static final List<String> politiaccounts =  List.arrayList("PolitiTrondelag");//,"oslopolitiops","polititroms","politifinnmark");
 
     static final String q = "politi";
     static final String queryUrl = "https://api.twitter.com/1.1/search/tweets.json?lanf=no&q=" + q;

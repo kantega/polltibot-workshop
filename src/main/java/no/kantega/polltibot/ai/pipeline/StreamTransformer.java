@@ -10,4 +10,5 @@ public interface StreamTransformer<A, B> extends Function<Stream<A>, Stream<B>> 
     default Stream<B> apply(Stream<A> input) {
         return transform(input);
     }
+
 }

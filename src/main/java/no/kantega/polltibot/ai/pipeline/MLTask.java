@@ -1,9 +1,11 @@
 package no.kantega.polltibot.ai.pipeline;
 
 import com.codahale.metrics.Timer;
+import fj.Unit;
 import fj.data.Either;
 import fj.function.Try0;
 import no.kantega.polltibot.ai.pipeline.training.StopCondition;
+import no.kantega.polltibot.workshop.tools.Util;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.dataset.DataSet;
 
@@ -38,6 +40,13 @@ public interface MLTask<A> {
         return () -> CompletableFuture.completedFuture(value);
     }
 
+    static MLTask<Unit> run(Runnable r) {
+        return supplier(() -> {
+            r.run();
+            return Unit.unit();
+        });
+    }
+
     static <A> MLTask<A> fail(Exception e) {
         return () -> {
             CompletableFuture<A> fut = new CompletableFuture<>();
@@ -68,6 +77,10 @@ public interface MLTask<A> {
         });
     }
 
+    default MLTask<A> print(String msg){
+        return bind(b-> Util.println(msg).thenJust(b));
+    }
+
     default MLTask<A> time(String name, PrintStream out) {
         return time(
                 start -> out.println("Start " + name + " at " + start),
@@ -76,7 +89,7 @@ public interface MLTask<A> {
         );
     }
 
-    default MLTask<A> time(Timer metricsTimer){
+    default MLTask<A> time(Timer metricsTimer) {
         return () -> {
             Timer.Context time = metricsTimer.time();
             return execute().whenComplete((aOrNull, exorNull) -> {
@@ -119,6 +132,15 @@ public interface MLTask<A> {
         return () -> execute().thenCompose(a -> f.apply(a).execute());
     }
 
+
+    default <B> MLTask<B> handle(Function<Throwable,MLTask<B>> onException,Function<A,MLTask<B>> onSuccess){
+        return ()-> execute().handle(
+                (aOrNull, exOrNull)->
+                        Optional.ofNullable(aOrNull)
+                                .map(onSuccess)
+                                .orElseGet(()->onException.apply(exOrNull))).thenCompose(MLTask::execute);
+    }
+
     default <B> MLTask<B> andThen(Function<A, MLTask<B>> f) {
         return bind(f);
     }
@@ -159,6 +181,14 @@ public interface MLTask<A> {
             return execute().toCompletableFuture().get();
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    default void executeAndAwait(Consumer<A> onSuccess,Consumer<Exception> onFail) {
+        try {
+            onSuccess.accept(execute().toCompletableFuture().get());
+        } catch (Exception e) {
+            onFail.accept(e);
         }
     }
 }

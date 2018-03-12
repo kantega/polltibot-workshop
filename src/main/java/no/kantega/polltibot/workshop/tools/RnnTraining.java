@@ -1,13 +1,10 @@
-package no.kantega.polltibot.mains;
+package no.kantega.polltibot.workshop.tools;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import fj.P;
 import fj.P2;
-import no.kantega.polltibot.Corpus;
-import no.kantega.polltibot.FastTextMap;
-import no.kantega.polltibot.NetInputToken;
-import no.kantega.polltibot.StreamTransformers;
+import no.kantega.polltibot.twitter.Corpus;
 import no.kantega.polltibot.ai.pipeline.MLTask;
 import no.kantega.polltibot.ai.pipeline.persistence.PipelineConfig;
 import no.kantega.polltibot.ai.pipeline.training.StopCondition;
@@ -25,47 +22,58 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static no.kantega.polltibot.NetInputToken.Word;
-import static no.kantega.polltibot.StreamTransformers.*;
+import static no.kantega.polltibot.workshop.tools.Token.Word;
+import static no.kantega.polltibot.workshop.Settings.*;
+import static no.kantega.polltibot.workshop.Settings.maxWords;
+import static no.kantega.polltibot.workshop.tools.StreamTransformers.*;
 import static no.kantega.polltibot.ai.pipeline.Dl4jUtils.atIndex;
 import static org.nd4j.linalg.indexing.NDArrayIndex.all;
 import static org.nd4j.linalg.indexing.NDArrayIndex.point;
 
-public class Training {
+public class RnnTraining {
 
     static final Random random = new Random();
-    static final int maxWords = 5;
-    static final int miniBatchSize = 3;
+
 
     public static MetricRegistry registry = new MetricRegistry();
     static Timer trainTimer = registry.timer("Fit network");
     static Timer toDataSetTimer = registry.timer("To dataset");
     static Timer conversionTimer = registry.timer("Conversion");
 
-    public static MLTask<P2<PipelineConfig, FastTextMap>> train(Path pathToFastTextFile) {
+    static final Path modelPath =
+            Paths.get(System.getProperty("user.home") + "/data/rnn/");
+
+
+    public static MLTask<P2<PipelineConfig, FastTextMap>> trainRnn(Path pathToFastTextFile) {
         return FastTextMap.load(pathToFastTextFile).time("FastTextMapping", System.out)
                 .bind(fastText ->
                         TwitterStore.getStore().corpus(Corpus.politi)
-                                .map(s->s.limit(100))
                                 .map(words())
                                 .map(transformList(fastText::asToken))
                                 .map(nonEmpty())
                                 .map(split(maxWords))
-                                .map(padRight(NetInputToken.padding(), maxWords))
+                                .map(padRight(Token.padding(), maxWords))
                                 .map(batch(miniBatchSize))
-                                .map(transformer(Training::toRnnDataSet))
-                                .apply(createNet(), MLTask::fit).time("Training epoch", System.out)
-                                .repeat(() -> StopCondition.times(100))
+                                .map(transformer(RnnTraining::toRnnDataSet))
+                                .apply(createRNN(), MLTask::fit).time("Training epoch", System.out)
+                                .repeat(() -> StopCondition.times(5))
+                                .bind(net -> PipelineConfig
+                                        .save(PipelineConfig.newEmptyConfig(net), modelPath.resolve("pollti-" + System.currentTimeMillis() + ".rnn"))
+                                        .thenJust(net))
+                                .repeat(() -> StopCondition.until(ZonedDateTime.now().plusDays(2).toInstant()))
                                 .map(PipelineConfig::newEmptyConfig)
                                 .map(cfg -> P.p(cfg, fastText))).time("Total", System.out);
     }
 
 
-    public static MLTask<List<String>> generate(FastTextMap ftm, PipelineConfig config, String initWord, int count) {
+
+    public static MLTask<List<String>> generateRnn(FastTextMap ftm, PipelineConfig config, String initWord, int count) {
         return MLTask.trySupply(() -> {//Create input for initialization
             MultiLayerNetwork net = config.net;
             String inputWord = initWord;
@@ -90,7 +98,10 @@ public class Training {
         });
     }
 
-    public static MultiLayerNetwork createNet() {
+
+
+
+    public static MultiLayerNetwork createRNN() {
         int lstmLayerSize = 100;
 
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
@@ -124,6 +135,7 @@ public class Training {
     }
 
 
+
     //Allocate space:
     //Note the order here:
     // dimension 0 = number of examples in minibatch
@@ -132,25 +144,21 @@ public class Training {
     //Why 'f' order here? See http://deeplearning4j.org/usingrnns.html#data section "Alternative: Implementing a custom DataSetIterator"
 
 
-
-
-
-
-    public static DataSet toRnnDataSet(List<List<NetInputToken>> batch) {
+    public static DataSet toRnnDataSet(List<List<Token>> batch) {
         Timer.Context context = toDataSetTimer.time();
         int currMinibatchSize = batch.size();
-         INDArray features = Nd4j.create(new int[]{miniBatchSize, 300, maxWords-1}, 'f');
-         INDArray labels = Nd4j.create(new int[]{miniBatchSize, 300, maxWords-1}, 'f');
-         INDArray featuresMask = Nd4j.create(new int[]{miniBatchSize, maxWords-1}, 'f');
-         INDArray labelsMask = Nd4j.create(new int[]{miniBatchSize, maxWords-1}, 'f');
+        INDArray features = Nd4j.create(new int[]{miniBatchSize, 300, maxWords - 1}, 'f');
+        INDArray labels = Nd4j.create(new int[]{miniBatchSize, 300, maxWords - 1}, 'f');
+        INDArray featuresMask = Nd4j.create(new int[]{miniBatchSize, maxWords - 1}, 'f');
+        INDArray labelsMask = Nd4j.create(new int[]{miniBatchSize, maxWords - 1}, 'f');
 
         for (int i = 0; i < currMinibatchSize; i++) {
-            List<NetInputToken> tokens = batch.get(i);
+            List<Token> tokens = batch.get(i);
 
             Word prevToken = tokens.get(0).asWord();
 
             for (int j = 0; j < tokens.size() - 1; j++) {
-                NetInputToken token = tokens.get(j + 1);
+                Token token = tokens.get(j + 1);
                 if (token.isWord()) {
                     Word nextToken = token.asWord();
                     features.put(atIndex(point(i), all(), point(j)), prevToken.vector);
@@ -164,5 +172,7 @@ public class Training {
         context.stop();
         return new DataSet(features, labels, featuresMask, labelsMask);
     }
+
+
 
 }

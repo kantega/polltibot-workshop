@@ -2,25 +2,26 @@ package no.kantega.polltibot.mains;
 
 import no.kantega.polltibot.workshop.tools.FastTextMap;
 import no.kantega.polltibot.ai.pipeline.persistence.PipelineConfig;
-import no.kantega.polltibot.workshop.tools.RnnTraining;
+import no.kantega.polltibot.workshop.tools.VaeTraining;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static no.kantega.polltibot.mains.VaeCreateMain.fastTextPath;
+public class VaeCreateMain {
 
-public class RnnCreateMain {
+    static final Path fastTextPath =
+            Paths.get(System.getProperty("user.home") + "/data/fastText/wiki.no.vec").toAbsolutePath();
 
     static final Path modelPath =
-            Paths.get(System.getProperty("user.home") + "/data/rnn/pollti.rnn").toAbsolutePath();
+            Paths.get(System.getProperty("user.home") + "/data/vae/pollti.net").toAbsolutePath();
 
     public static void main(String[] args) {
         List<String> words =
                 FastTextMap.load(fastTextPath).time("Loading FastText Vectors",System.out)
                         .bind(ftm ->
                                 PipelineConfig.read(modelPath).time("Reading model", System.out)
-                                        .bind(config -> RnnTraining.generateRnn(ftm, config, "Tromsøbrua", 15))
+                                        .bind(config -> VaeTraining.generateVae(ftm, config))
                                         .time("Generating tweet", System.out))
                         .executeAndAwait();
 

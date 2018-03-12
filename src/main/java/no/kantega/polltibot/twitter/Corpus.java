@@ -1,4 +1,4 @@
-package no.kantega.polltibot;
+package no.kantega.polltibot.twitter;
 
 public enum Corpus {
 

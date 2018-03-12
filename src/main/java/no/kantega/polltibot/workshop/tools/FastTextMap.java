@@ -1,7 +1,5 @@
-package no.kantega.polltibot;
+package no.kantega.polltibot.workshop.tools;
 
-import fj.Ord;
-import fj.P;
 import no.kantega.polltibot.ai.pipeline.MLTask;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -55,16 +53,16 @@ public class FastTextMap {
         });
     }
 
-    public Optional<NetInputToken> asToken(String word) {
+    public Optional<Token> asToken(String word) {
         return
                 Optional
                         .ofNullable(wordToIndex.get(word.toLowerCase()))
-                        .map(row -> NetInputToken.toToken(word, table.getRow(row)));
+                        .map(row -> Token.toToken(word, table.getRow(row)));
     }
     Random r = new Random();
-    public NetInputToken randomWord(){
+    public Token randomWord(){
         int row = r.nextInt(wordToIndex.size());
-        return NetInputToken.toToken(indexToWord.get(row),table.getRow(row));
+        return Token.toToken(indexToWord.get(row),table.getRow(row));
     }
 
     public List<String> wordForVec(INDArray array, int topN) {

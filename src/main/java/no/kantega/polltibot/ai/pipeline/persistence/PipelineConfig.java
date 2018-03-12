@@ -82,11 +82,11 @@ public class PipelineConfig implements Serializable {
         return (HashMap<String, Object>) ois.readObject();
     }
 
-    public static MLTask<Unit> save(PipelineConfig config, Path path) {
+    public static MLTask<PipelineConfig> save(PipelineConfig config, Path path) {
         return asBytes(config).bind(bytes -> MLTask.trySupply(() -> {
             Files.createDirectories(path.getParent());
             Files.write(path, bytes);
-            return Unit.unit();
+            return config;
         }));
     }
 

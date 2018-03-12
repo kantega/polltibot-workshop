@@ -1,12 +1,10 @@
 package no.kantega.polltibot.mains;
 
-import no.kantega.polltibot.Corpus;
+import no.kantega.polltibot.twitter.Corpus;
 import no.kantega.polltibot.twitter.TwitterStore;
 import org.kantega.kson.JsonResult;
 import org.kantega.kson.json.JsonValue;
 import org.kantega.kson.parser.JsonParser;
-
-import java.time.Duration;
 
 public class ListTweetsMain {
     public static void main(String[] args) {
