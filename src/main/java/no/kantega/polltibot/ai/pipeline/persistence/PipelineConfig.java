@@ -29,7 +29,7 @@ public class PipelineConfig implements Serializable {
         this.values = values;
     }
 
-    public static PipelineConfig newEmptyConfig(MultiLayerNetwork net) {
+    public static PipelineConfig newConfig(MultiLayerNetwork net) {
         return new PipelineConfig(net, new HashMap<>());
     }
 

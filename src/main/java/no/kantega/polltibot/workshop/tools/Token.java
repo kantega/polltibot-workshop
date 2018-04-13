@@ -1,6 +1,7 @@
 package no.kantega.polltibot.workshop.tools;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 
 import java.util.function.Consumer;
 
@@ -23,6 +24,8 @@ public interface Token {
         consume(wordConsumer, padding -> {
         });
     }
+
+    INDArray toInput();
 
 
     void consume(Consumer<Word> wordConsumer, Consumer<Padding> paddingConsumer);
@@ -60,6 +63,10 @@ public interface Token {
         @Override
         public void consume(Consumer<Word> wordConsumer, Consumer<Padding> paddingConsumer) {
             paddingConsumer.accept(this);
+        }
+
+        public INDArray toInput() {
+            return Nd4j.zeros(1,300);
         }
     }
 

@@ -70,11 +70,11 @@ public class StreamTransformers {
         return transformer(s -> tokens(s));
     }
 
-    private static List<String> tokens(String line) {
+    public static List<String> tokens(String line) {
         List<String> tokens = new ArrayList<>();
         StringBuilder word = new StringBuilder();
         for (char c : line.toCharArray()) {
-            if (Character.isAlphabetic(c) || (c == '#')) {
+            if (Character.isLetter(c)) {
                 word.append(c);
             } else {
                 if (word.length() > 0) {

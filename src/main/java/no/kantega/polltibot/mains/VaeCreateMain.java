@@ -17,16 +17,15 @@ public class VaeCreateMain {
             Paths.get(System.getProperty("user.home") + "/data/vae/pollti.net").toAbsolutePath();
 
     public static void main(String[] args) {
-        List<String> words =
-                FastTextMap.load(Settings.fastTextPath).time("Loading FastText Vectors",System.out)
+        List<String> tweets =
+                FastTextMap.load(Settings.fastTextPath,10000).time("Loading FastText Vectors",System.out)
                         .bind(ftm ->
                                 PipelineConfig.read(modelPath).time("Reading model", System.out)
                                         .bind(config -> VaeTraining.generateVae(ftm, config))
                                         .time("Generating tweet", System.out))
                         .executeAndAwait();
 
-        String tweet = words.stream().reduce((a, b) -> (a + " " + b)).orElse("Nothing tweeted!");
 
-        System.out.println(tweet);
+        tweets.forEach(System.out::println );
     }
 }

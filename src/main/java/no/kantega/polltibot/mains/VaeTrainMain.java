@@ -22,6 +22,5 @@ public class VaeTrainMain {
                 .bind(output -> PipelineConfig.save(output._1(), modelPath)
                         .time("Storing to disk", System.out))
                 .executeAndAwait();
-        ConsoleReporter.forRegistry(RnnTraining.registry).build().report();
     }
 }

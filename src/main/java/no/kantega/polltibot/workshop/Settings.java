@@ -5,8 +5,8 @@ import java.nio.file.Paths;
 
 public class Settings {
 
-    public static final int maxWords = 20;
-    public static final int miniBatchSize = 24;
+    public static final int maxWords = 10;
+    public static final int miniBatchSize = 12;
     public static final int maxepochs = 100;
 
     public static final Path fastTextPath =

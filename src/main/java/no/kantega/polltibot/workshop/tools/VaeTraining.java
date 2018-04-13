@@ -1,5 +1,6 @@
 package no.kantega.polltibot.workshop.tools;
 
+import com.codahale.metrics.ConsoleReporter;
 import fj.P;
 import fj.P2;
 import no.kantega.polltibot.ai.pipeline.MLTask;
@@ -21,7 +22,6 @@ import org.nd4j.linalg.indexing.NDArrayIndex;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static no.kantega.polltibot.workshop.Settings.maxWords;
 import static no.kantega.polltibot.workshop.Settings.miniBatchSize;
@@ -29,8 +29,9 @@ import static no.kantega.polltibot.workshop.tools.StreamTransformers.*;
 
 public class VaeTraining {
 
+
     public static MLTask<P2<PipelineConfig, FastTextMap>> trainVAE(Path pathToFastTextFile) {
-        return FastTextMap.load(pathToFastTextFile).time("FastTextMapping", System.out)
+        return FastTextMap.load(pathToFastTextFile,1000000).time("FastTextMapping", System.out)
                 .bind(VaeTraining::trainVAE);
     }
 
@@ -45,8 +46,8 @@ public class VaeTraining {
                         .map(batch(miniBatchSize))
                         .map(transformer(list -> VaeTraining.toVAEDataSet(fastText, list)))
                         .apply(createVAE(), MLTask::fit).time("Training epoch", System.out)
-                        .repeat(() -> StopCondition.times(100))
-                        .map(PipelineConfig::newEmptyConfig)
+                        .repeat(() -> StopCondition.times(20))
+                        .map(PipelineConfig::newConfig)
                         .map(cfg -> P.p(cfg, fastText));
     }
 
@@ -62,13 +63,21 @@ public class VaeTraining {
             for (int i = 0; i < out.size(0); i++) {
                 INDArray row = out.getRow(i);
                 StringBuilder builder = new StringBuilder();
+                INDArray[] words = new INDArray[maxWords];
                 for (int wordIndex = 0; wordIndex < maxWords; wordIndex++) {
                     INDArray wordArray = row.get(NDArrayIndex.interval(wordIndex * 300, (wordIndex + 1) * 300));
-                    builder.append(ftm.wordForVec(wordArray, 2).get(0)).append(" ");
+                    words[wordIndex] = wordArray;
                 }
+
+                List<List<String>> topWords =
+                        ftm.wordsForVec(words, 2);
+
+                topWords.forEach(topWord -> builder.append(topWord.get(0)).append(" ")); //Get the closest match
+
                 tweets.add(builder.toString());
             }
             tweets.forEach(System.out::println);
+            ConsoleReporter.forRegistry(FastTextMap.registry).build().report();
             return tweets;
         });
     }
@@ -113,28 +122,26 @@ public class VaeTraining {
     }
 
     public static DataSet toVAEDataSet(FastTextMap fastTextMap, List<List<Token>> batch) {
-        INDArray[] b = new INDArray[batch.size()];
+        INDArray[] features = new INDArray[batch.size()];
+        INDArray[] masks = new INDArray[batch.size()];
 
         for (int i = 0; i < batch.size(); i++) {
+            List<Token> tweet = batch.get(i);
+            INDArray[] arrs = new INDArray[tweet.size()];
+            INDArray[] mask = new INDArray[tweet.size()];
+            for (int wordN = 0; wordN < tweet.size(); wordN++) {
+                arrs[wordN] = tweet.get(wordN).toInput();
+                mask[wordN] = tweet.get(wordN).isWord() ? Nd4j.ones(1, 300) : Nd4j.zeros(1, 300);
+            }
 
-            INDArray features = tweetAsArray(batch.get(i)
-                    .stream()
-                    .map(w -> w.wordOr(fastTextMap.asToken(".").get())));
-
-            b[i] = features;
+            features[i] = Nd4j.concat(1, arrs);
+            masks[i] = Nd4j.concat(1, mask);
         }
 
-        INDArray featuresBatch = Nd4j.concat(0, b);
+        INDArray featuresBatch = Nd4j.concat(0, features);
+        INDArray maskBatch = Nd4j.concat(0, masks);
         return new DataSet(featuresBatch, featuresBatch);
     }
 
-    private static INDArray tweetAsArray(Stream<Token> tweet) {
-        INDArray[] arrs =
-                tweet
-                        .map(token -> token.asWord().vector)
-                        .toArray(INDArray[]::new);
 
-        INDArray features = Nd4j.concat(1, arrs);
-        return features;
-    }
 }

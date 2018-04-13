@@ -1,5 +1,6 @@
 package no.kantega.polltibot.workshop.tools;
 
+import com.codahale.metrics.Timer;
 import fj.F;
 import fj.P;
 import fj.P2;
@@ -14,9 +15,19 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 public class Util {
+
+
+    public static <A> A time(Timer timer, Callable<A> a) {
+        try {
+            return timer.time(a);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static MLTask<Stream<String>> load(byte[] resource) {
         return load(new ByteArrayInputStream(resource));
@@ -38,8 +49,8 @@ public class Util {
         return load("tweets.txt");
     }
 
-    public static <A, B> MLPipe<A, B> pipeNotImplemented() {
-        return MLPipe.fail(new RuntimeException("Not implemented yet"));
+    public static <T> T notImplemented(String text) {
+        throw new RuntimeException(text);
     }
 
     public static MLTask<Unit> println(String line) {

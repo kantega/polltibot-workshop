@@ -1,7 +1,5 @@
 package no.kantega.polltibot.workshop.tools;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
 import fj.P;
 import fj.P2;
 import no.kantega.polltibot.ai.pipeline.MLTask;
@@ -21,7 +19,6 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -39,10 +36,7 @@ public class RnnTraining {
     static final Random random = new Random();
 
 
-    public static MetricRegistry registry = new MetricRegistry();
-    static Timer trainTimer = registry.timer("Fit network");
-    static Timer toDataSetTimer = registry.timer("To dataset");
-    static Timer conversionTimer = registry.timer("Conversion");
+
 
     static final Path modelPath =
             Paths.get(System.getProperty("user.home") + "/data/rnn/");
@@ -60,12 +54,12 @@ public class RnnTraining {
                                 .map(batch(miniBatchSize))
                                 .map(transformer(RnnTraining::toRnnDataSet))
                                 .apply(createRNN(), MLTask::fit).time("Training epoch", System.out)
-                                .repeat(() -> StopCondition.times(5))
+                                .repeat(() -> StopCondition.times(25))
                                 .bind(net -> PipelineConfig
-                                        .save(PipelineConfig.newEmptyConfig(net), modelPath.resolve("pollti-" + System.currentTimeMillis() + ".rnn"))
+                                        .save(PipelineConfig.newConfig(net), modelPath.resolve("pollti-" + System.currentTimeMillis() + ".rnn"))
                                         .thenJust(net))
-                                .repeat(() -> StopCondition.until(ZonedDateTime.now().plusDays(2).toInstant()))
-                                .map(PipelineConfig::newEmptyConfig)
+                                //.repeat(() -> StopCondition.until(ZonedDateTime.now().plusDays(2).toInstant()))
+                                .map(PipelineConfig::newConfig)
                                 .map(cfg -> P.p(cfg, fastText))).time("Total", System.out);
     }
 
@@ -86,8 +80,7 @@ public class RnnTraining {
 
                 INDArray output = net.rnnTimeStep(input);
 
-                List<String> topWords = ftm.wordForVec(output, 10);
-                System.out.println("Found " + topWords);
+                List<String> topWords = ftm.wordForVec(output, 3);
                 String topWord = topWords.get(random.nextInt(topWords.size()));
                 generated.add(topWord);
                 inputWord = topWord;
@@ -107,7 +100,7 @@ public class RnnTraining {
                 .gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
                 .gradientNormalizationThreshold(1.0)
                 .iterations(1)
-                .learningRate(0.002)
+                .learningRate(0.0002)
                 .seed(12345)
                 .regularization(true)
                 .l2(0.0001)
@@ -143,12 +136,11 @@ public class RnnTraining {
 
 
     public static DataSet toRnnDataSet(List<List<Token>> batch) {
-        Timer.Context context = toDataSetTimer.time();
         int currMinibatchSize = batch.size();
         INDArray features = Nd4j.create(new int[]{miniBatchSize, 300, maxWords - 1}, 'f');
         INDArray labels = Nd4j.create(new int[]{miniBatchSize, 300, maxWords - 1}, 'f');
-        INDArray featuresMask = Nd4j.create(new int[]{miniBatchSize, maxWords - 1}, 'f');
-        INDArray labelsMask = Nd4j.create(new int[]{miniBatchSize, maxWords - 1}, 'f');
+        INDArray featuresMask = Nd4j.zeros(new int[]{miniBatchSize, maxWords - 1}, 'f');
+        INDArray labelsMask = Nd4j.zeros(new int[]{miniBatchSize, maxWords - 1}, 'f');
 
         for (int i = 0; i < currMinibatchSize; i++) {
             List<Token> tokens = batch.get(i);
@@ -167,7 +159,6 @@ public class RnnTraining {
                 }
             }
         }
-        context.stop();
         return new DataSet(features, labels, featuresMask, labelsMask);
     }
 
