@@ -26,7 +26,7 @@ public class TrainInCloud {
             acls.add(Acl.of(Acl.User.ofAllUsers(), Acl.Role.READER));
 
 
-            FastTextMap.load(Paths.get("/opt/pollti-workshop/temp/wiki.no.vec"))
+            FastTextMap.load(Paths.get("/opt/pollti-workshop/temp/wiki.no.vec"),100000)
                     .bind(fastText ->
                             VaeTraining.trainVAE(fastText)
                                     .bind(pair -> PipelineConfig.asBytes(pair._1()))

@@ -15,7 +15,7 @@ public class GenerateFromCloud {
             Storage storage = StorageOptions.getDefaultInstance().getService();
 
             byte[] input = storage.readAllBytes("pollti-bot-workshop", "eval.pipeline");
-            FastTextMap.load(Settings.fastTextPath)
+            FastTextMap.load(Settings.fastTextPath,1000000)
                     .bind(fastText ->
                             PipelineConfig.read(input)
                                     .bind(cfg -> VaeTraining.generateVae(fastText, cfg))

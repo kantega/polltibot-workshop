@@ -18,7 +18,7 @@ public class RnnCreateMain {
 
     public static void main(String[] args) {
         List<String> words =
-                FastTextMap.load(fastTextPath).time("Loading FastText Vectors",System.out)
+                FastTextMap.load(fastTextPath,100000).time("Loading FastText Vectors",System.out)
                         .bind(ftm ->
                                 PipelineConfig.read(modelPath).time("Reading model", System.out)
                                         .bind(config -> RnnTraining.generateRnn(ftm, config, "Tromsøbrua", 15))

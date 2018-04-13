@@ -63,8 +63,8 @@ public interface MLPipe<A, B> {
     }
 
 
-    default MLPipe<A, B> print(String msg) {
-        return input -> apply(input).print(msg);
+    default MLPipe<A, B> print(Supplier<String> msg) {
+        return input -> apply(input).print(msg.get());
     }
 
 

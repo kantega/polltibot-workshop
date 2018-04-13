@@ -43,7 +43,7 @@ public class RnnTraining {
 
 
     public static MLTask<P2<PipelineConfig, FastTextMap>> trainRnn(Path pathToFastTextFile) {
-        return FastTextMap.load(pathToFastTextFile).time("FastTextMapping", System.out)
+        return FastTextMap.load(pathToFastTextFile,1000000).time("FastTextMapping", System.out)
                 .bind(fastText ->
                         Util.loadTweets()
                                 .map(words())
